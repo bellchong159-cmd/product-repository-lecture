@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f4">
+  <title>오늘의 로또 번호</title>
+  <style>
+    :root { color-scheme: light; --ink:#202820; --muted:#737b72; --green:#286d4d; --line:#e6e9e2; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:32px 18px; background:radial-gradient(ellipse at 50% 0%,#e5f0e7 0,transparent 48%),#f7f8f4; color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(100%,760px); text-align:center; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; color:var(--green); font-size:13px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
+    .eyebrow::before { content:""; width:7px; height:7px; border-radius:50%; background:#66a879; }
+    h1 { margin:16px 0 10px; font-size:clamp(32px,7vw,52px); letter-spacing:-.055em; line-height:1.12; }
+    .intro { margin:0; color:var(--muted); font-size:16px; line-height:1.7; }
+    .card { margin-top:34px; padding:clamp(24px,6vw,42px); border:1px solid #e8ebe5; border-radius:24px; background:rgba(255,255,255,.88); box-shadow:0 18px 55px #29463212; }
+    .balls { min-height:70px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:clamp(8px,2vw,14px); }
+    .ball { display:grid; place-items:center; width:clamp(46px,11vw,62px); aspect-ratio:1; border-radius:50%; color:#fff; font-size:clamp(17px,4vw,22px); font-weight:800; box-shadow:inset 0 -4px 0 #00000014; animation:pop .28s both; }
+    .ball:nth-child(1){animation-delay:.02s}.ball:nth-child(2){animation-delay:.06s}.ball:nth-child(3){animation-delay:.10s}.ball:nth-child(4){animation-delay:.14s}.ball:nth-child(5){animation-delay:.18s}.ball:nth-child(6){animation-delay:.22s}
+    .placeholder { color:#a7aea5; font-size:15px; }
+    .bonus-result { min-height:30px; margin-top:18px; color:var(--muted); font-size:13px; }
+    .bonus-result .ball { display:inline-grid; width:30px; margin-left:9px; font-size:12px; vertical-align:middle; animation:none; }
+    .bonus-label { font-weight:700; color:#50594f; }
+    .result-list { display:grid; gap:12px; }
+    .result-row { display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:12px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
+    .result-index { color:var(--muted); font-size:13px; font-weight:700; }
+    .result-row .balls { min-height:0; gap:clamp(5px,1.5vw,10px); }
+    .result-row .ball { width:clamp(32px,8vw,44px); font-size:clamp(13px,3vw,17px); }
+    .result-bonus { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; white-space:nowrap; }
+    .result-bonus .bonus-ball { width:32px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; color:#fff; font-size:12px; font-weight:800; }
+    .divider { height:1px; background:var(--line); margin:30px 0 22px; }
+    button { width:100%; min-height:58px; display:flex; justify-content:center; align-items:center; gap:10px; border:0; border-radius:14px; background:var(--green); color:white; font:inherit; font-size:17px; font-weight:750; cursor:pointer; transition:transform .15s,background .15s,box-shadow .15s; box-shadow:0 7px 18px #286d4d2b; }
+    button:hover { background:#205d40; transform:translateY(-2px); box-shadow:0 10px 22px #286d4d38; }
+    button:active { transform:translateY(0); }
+    button:focus-visible { outline:3px solid #8bbd97; outline-offset:3px; }
+    .hint { margin:18px 0 0; color:var(--muted); font-size:13px; }
+    .history { margin-top:24px; text-align:left; }
+    .history-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .history h2 { margin:0; font-size:14px; }
+    .clear { width:auto; min-height:auto; padding:5px 8px; box-shadow:none; border:0; background:transparent; color:var(--muted); font-size:12px; font-weight:600; }
+    .clear:hover { background:#f0f3ee; color:var(--ink); transform:none; box-shadow:none; }
+    .history-list { display:grid; gap:8px; }
+    .history-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:white; }
+    .history-item .balls { min-height:0; justify-content:flex-start; gap:6px; }
+    .history-item .bonus-ball { width:29px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; color:white; font-size:12px; font-weight:800; }
+    .history-item .ball { width:29px; font-size:12px; animation:none; box-shadow:none; }
+    .history-empty { margin:0; color:var(--muted); font-size:13px; text-align:center; padding:10px; }
+    @media (max-width:520px) {
+      .result-row { grid-template-columns:28px 1fr; gap:8px; padding:10px 8px; }
+      .result-bonus { grid-column:2; justify-self:start; }
+    }
+    footer { margin-top:22px; color:#8b9289; font-size:12px; }
+    @keyframes pop { from { opacity:0; transform:scale(.65) translateY(8px) } to { opacity:1; transform:scale(1) translateY(0) } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="eyebrow">LUCKY PICK</span>
+    <h1>오늘의 로또 번호</h1>
+    <p class="intro">버튼을 한 번 눌러 로또 번호 5세트를 한꺼번에 추천받아 보세요.</p>
+    <section class="card" aria-label="로또 번호 추천">
+      <div class="result-list" id="numbers" aria-live="polite" aria-label="추천 번호 5세트">
+        <span class="placeholder">번호가 여기에 표시됩니다</span>
+      </div>
+      <div class="divider"></div>
+      <button id="generate" type="button"><span aria-hidden="true">✦</span> 번호 추천받기</button>
+      <p class="hint">각 세트는 1부터 45까지 중복 없이 번호 6개와 보너스 번호 1개로 구성돼요.</p>
+      <section class="history" aria-label="최근 추천 번호">
+        <div class="history-head">
+          <h2>최근 추천</h2>
+          <button class="clear" id="clear" type="button">기록 지우기</button>
+        </div>
+        <div class="history-list" id="history">
+          <p class="history-empty">아직 추천 기록이 없습니다.</p>
+        </div>
+      </section>
+    </section>
+    <footer>번호는 무작위로 생성되며 당첨을 보장하지 않습니다.</footer>
+  </main>
+  <script>
+    const numberArea = document.querySelector('#numbers');
+    const historyArea = document.querySelector('#history');
+    const colors = [
+      { max: 10, color: '#f2a900' },
+      { max: 20, color: '#3986c8' },
+      { max: 30, color: '#e34b4b' },
+      { max: 40, color: '#858b8d' },
+      { max: 45, color: '#55a35b' }
+    ];
+    let picks = [];
+
+    function ballColor(number) {
+      return colors.find(group => number <= group.max).color;
+    }
+
+    function createBall(number, small = false) {
+      const ball = document.createElement('span');
+      ball.className = 'ball';
+      ball.textContent = String(number).padStart(2, '0');
+      ball.style.backgroundColor = ballColor(number);
+      ball.setAttribute('aria-label', `${number}번`);
+      if (small) ball.title = `${number}번`;
+      return ball;
+    }
+
+    function makePick() {
+      const pool = Array.from({ length: 45 }, (_, index) => index + 1);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return { main: pool.slice(0, 6).sort((a, b) => a - b), bonus: pool[6] };
+    }
+
+    function renderHistory() {
+      historyArea.replaceChildren();
+      if (picks.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'history-empty';
+        empty.textContent = '아직 추천 기록이 없습니다.';
+        historyArea.append(empty);
+        return;
+      }
+
+      picks.forEach((pick, index) => {
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        const set = document.createElement('div');
+        set.className = 'balls';
+        set.setAttribute('aria-label', `추천 ${index + 1}: 본 번호 ${pick.main.join(', ')}, 보너스 ${pick.bonus}`);
+        pick.main.forEach(number => set.append(createBall(number, true)));
+
+        const bonus = document.createElement('span');
+        bonus.className = 'bonus-ball';
+        bonus.textContent = `+${String(pick.bonus).padStart(2, '0')}`;
+        bonus.style.backgroundColor = ballColor(pick.bonus);
+
+        const label = document.createElement('span');
+        label.style.cssText = 'flex:none;color:#737b72;font-size:12px';
+        label.textContent = `${index + 1}회`;
+        row.append(set, bonus, label);
+        historyArea.append(row);
+      });
+    }
+
+    function createResultRow(pick, index) {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+
+      const label = document.createElement('span');
+      label.className = 'result-index';
+      label.textContent = `${index + 1}세트`;
+
+      const balls = document.createElement('div');
+      balls.className = 'balls';
+      pick.main.forEach(number => balls.append(createBall(number)));
+
+      const bonus = document.createElement('div');
+      bonus.className = 'result-bonus';
+      bonus.append(document.createTextNode('보너스'));
+
+      const bonusBall = document.createElement('span');
+      bonusBall.className = 'bonus-ball';
+      bonusBall.textContent = String(pick.bonus).padStart(2, '0');
+      bonusBall.style.backgroundColor = ballColor(pick.bonus);
+      bonus.append(bonusBall);
+
+      row.append(label, balls, bonus);
+      return row;
+    }
+
+    document.querySelector('#generate').addEventListener('click', () => {
+      const batch = Array.from({ length: 5 }, makePick);
+      numberArea.replaceChildren(...batch.map((pick, index) => createResultRow(pick, index)));
+      picks.unshift(...batch);
+      picks = picks.slice(0, 5);
+      renderHistory();
+    });
+
+    document.querySelector('#clear').addEventListener('click', () => {
+      picks = [];
+      renderHistory();
+    });
+  </script>
+</body>
+</html>
